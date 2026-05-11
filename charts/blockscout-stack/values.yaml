@@ -19,7 +19,7 @@ imagePullSecrets: []
 ##
 config:
   network:
-    id: 1
+    id: 20251
     name: Temtum Mainnet
     shortname: TEM
     currency:
