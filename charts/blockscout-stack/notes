@@ -1,0 +1,14 @@
+"postgres://dbadmin:AooDDKC54pmEePhM3RpNdYSKFubbTVb@temtumttn1db.postgres.database.azure.com"
+
+AooDDKC54pmEePhM3RpNdYSKFubbTVb  -temtumttn1db dbadmin
+"postgres://dbadmin:AooDDKC54pmEePhM3RpNdYSKFubbTVb@temtumttn1db.postgres.database.azure.com/postgres"
+
+
+export PGHOST=temtumttn1db.postgres.database.azure.com
+export PGUSER=smccarty@rhaegal.io
+export PGPORT=5432
+export PGDATABASE=postgres
+export PGPASSWORD="$(az account get-access-token --resource https://ossrdbms-aad.database.windows.net --query accessToken --output tsv)" 
+
+helm install blockscout blockscout/blockscout-stack
+helm install blockscout blockscout/blockscout-stack --namespace quorum --values blockscout-admin/clean-deploy.yaml

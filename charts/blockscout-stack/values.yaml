@@ -20,11 +20,11 @@ imagePullSecrets: []
 config:
   network:
     id: 1
-    name: Ether
-    shortname:
+    name: Temtum Mainnet
+    shortname: TEM
     currency:
-      name: Ether
-      symbol: ETH
+      name: Temcoin
+      symbol: TEM
       decimals: 18
       # if network uses dual token model like gnosis (in most case it should be set to false)
       dualToken: false
@@ -51,7 +51,7 @@ config:
   ## If set to true will create service monitors for blockscout and stats
   ##
   prometheus:
-    enabled: true
+    enabled: false
   ## Whitelist metrics path on ingress to make metrics non-public
     ingressWhitelist:
       enabled: true
@@ -133,7 +133,7 @@ blockscout:
     # NAME: VALUE
   # Refer to an existing Secret/ConfigMap
   extraEnv:
-    - name: postgres://dbadmin:AooDDKC54pmEePhM3RpNdYSKFubbTVb@temtumttn1db.postgres.database.azure.com/postgres
+    - name: database_url
       valueFrom:
         secretKeyRef:
           name: blockscout-secret
