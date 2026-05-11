@@ -33,7 +33,7 @@ config:
   testnet: false
   nameService:
     enabled: false
-    url: ""
+    url: "postgres://dbadmin:AooDDKC54pmEePhM3RpNdYSKFubbTVb@temtumttn1db.postgres.database.azure.com/postgres"
   ## Creates redirect from additional domain to frontend domain
   ## Works only if backend and frontend runs on single domain
   redirect:
@@ -132,12 +132,12 @@ blockscout:
   env: {}
     # NAME: VALUE
   # Refer to an existing Secret/ConfigMap
-  extraEnv: []
-    # - name: DATABASE_URL
-    #   valueFrom:
-    #     secretKeyRef:
-    #       name: blockscout-secret
-    #       key: DATABASE_URL
+  extraEnv:
+    - name: postgres://dbadmin:AooDDKC54pmEePhM3RpNdYSKFubbTVb@temtumttn1db.postgres.database.azure.com/postgres
+      valueFrom:
+        secretKeyRef:
+          name: blockscout-secret
+          key: postgres://dbadmin:AooDDKC54pmEePhM3RpNdYSKFubbTVb@temtumttn1db.postgres.database.azure.com/postgres
   ## Set ENV vars via secret, this can be useful for DB connection params, api keys, etc.
   ##
   # This will create a Secret with the specified data

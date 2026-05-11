@@ -1,0 +1,29 @@
+cluster:
+  provider: azure
+  cloudNativeServices: true # set to true to use Cloud Native Services (SecretsManager and IAM for AWS; KeyVault & Managed Identities for Azure)
+
+
+quorumFlags:
+  usesBootnodes: true
+
+azure:
+  serviceAccountName: quorum-sa
+  # the clientId of the user assigned managed identity created in the template
+  identityClientId: 44a3fd22-fa16-4c28-b2c2-3f834eca31a9
+  # the clientId of the user assigned managed identity in the node pool's resource group
+  nodePoolIdentityClientId: e8908d12-1618-4844-b7e9-f70e05ed451a
+  keyvaultName: goq-dev-leapjnwc-vault
+  # the tenant ID of the key vault
+  tenantId: dfe536f9-3068-4b4e-b585-78fd9fcbaf73
+  # the subscription ID to use - this needs to be set explicitly when using multi tenancy
+  subscriptionId: 4336b46c-cadc-4555-8390-7d9568f0bbee
+
+
+rawGenesisConfig:
+  genesis:
+    config:
+      chainId: 20251
+    gasLimit: '0x1fffffffffffff'
+    alloc:
+      0x7a1E6758d45E89c02dcdaBF310B9A29941B7Fb2c:
+        balance: '0xc685fa11e01ec6f000000'
