@@ -141,7 +141,7 @@ blockscout:
     - name: ETHEREUM_JSONRPC_VARIANT
       valueFrom: besu
     - name: ETHEREUM_JSONRPC_HTTP_URL
-      valueFrom: 10.0.1.102:8545, 10.0.0.98:8545
+      valueFrom: 10.0.1.188:8545
     - name: SECRET_KEY_BASE
       valueFrom: 
 
