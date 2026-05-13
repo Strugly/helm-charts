@@ -349,3 +349,64 @@ keyvaultid: None, enable_kv: None
     "verticalPodAutoscaler": null
   }
 }
+
+
+kubectl apply -f - <<EOF
+apiVersion: gateway.networking.k8s.io/v1
+kind: Gateway
+metadata:
+  name: httpbin-gateway
+spec:
+  gatewayClassName: approuting-istio
+  listeners:
+  - name: http
+    port: 80
+    protocol: HTTP
+    allowedRoutes:
+      namespaces:
+        from: Same
+  listeners:
+  - name: http
+    port: 443
+    protocol: HTTPS
+    allowedRoutes:
+      namespaces:
+        from: Same
+---
+apiVersion: gateway.networking.k8s.io/v1
+kind: HTTPRoute
+metadata:
+  name: httpbin
+spec:
+  parentRefs:
+  - name: httpbin-gateway
+  hostnames: ["testnet.rhaegal.io"]
+  rules:
+  - matches:
+    - path:
+        type: PathPrefix
+        value: /get
+    backendRefs:
+    - name: httpbin
+      port: 8000
+EOF
+
+gateway.gateway.networking.k8s.io/httpbin-gateway created
+httproute.gateway.networking.k8s.io/httpbin created
+strugly@strugly-ASS:~/Work/blockscout/helm-charts/charts$ kubectl get deployment httpbin-gateway-approuting-istio
+NAME                               READY   UP-TO-DATE   AVAILABLE   AGE
+httpbin-gateway-approuting-istio   1/1     1            1           15s
+strugly@strugly-ASS:~/Work/blockscout/helm-charts/charts$ kubectl get service httpbin-gateway-approuting-istio
+NAME                               TYPE           CLUSTER-IP   EXTERNAL-IP   PORT(S)                         AGE
+httpbin-gateway-approuting-istio   LoadBalancer   10.2.0.20    4.149.83.38   15021:30399/TCP,443:32365/TCP   23s
+strugly@strugly-ASS:~/Work/blockscout/helm-charts/charts$ kubectl get hpa httpbin-gateway-approuting-istio
+NAME                               REFERENCE                                     TARGETS              MINPODS   MAXPODS   REPLICAS   AGE
+httpbin-gateway-approuting-istio   Deployment/httpbin-gateway-approuting-istio   cpu: <unknown>/80%   2         5         2          49s
+strugly@strugly-ASS:~/Work/blockscout/helm-charts/charts$ kubectl get pdb httpbin-gateway-approuting-istio
+NAME                               MIN AVAILABLE   MAX UNAVAILABLE   ALLOWED DISRUPTIONS   AGE
+httpbin-gateway-approuting-istio   1               N/A               1                     3m26s
+strugly@strugly-ASS:~/Work/blockscout/helm-charts/charts$ kubectl wait --for=condition=programmed gateways.gateway.networking.k8s.io httpbin-gateway
+export INGRESS_HOST=$(kubectl get gateways.gateway.networking.k8s.io httpbin-gateway -ojsonpath='{.status.addresses[0].value}')
+gateway.gateway.networking.k8s.io/httpbin-gateway condition met
+strugly@strugly-ASS:~/Work/blockscout/helm-charts/charts$ curl -s -I -HHost:testnet.rhaegal.io "http://$INGRESS_HOST/get"
+strugly@strugly-ASS:~/Work/blockscout/helm-charts/charts$ curl -s -I -HHost:testnet.rhaegal.io "http://$INGRESS_HOST/get"
