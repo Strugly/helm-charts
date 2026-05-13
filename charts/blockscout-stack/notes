@@ -11,4 +11,341 @@ export PGDATABASE=postgres
 export PGPASSWORD="$(az account get-access-token --resource https://ossrdbms-aad.database.windows.net --query accessToken --output tsv)" 
 
 helm install blockscout blockscout/blockscout-stack
-helm install blockscout blockscout/blockscout-stack --namespace quorum --values blockscout-admin/clean-deploy.yaml
+helm install blockscout blockscout/blockscout-stack --namespace quorum --values blockscout-stack/values.yaml --values blockscout-stack/clean-deploy.yaml
+
+az feature register --namespace "Microsoft.ContainerService" --name "AppRoutingIstioGatewayAPIPreview"
+
+export CLUSTER=goq-dev-leapjnwc-cluster
+export RESOURCE_GROUP=Temtum_Testnet_1
+
+az aks create --resource-group ${RESOURCE_GROUP} --name ${CLUSTER} --enable-app-routing-istio
+
+strugly@strugly-ASS:~/Work/blockscout/helm-charts/charts$ az aks update --resource-group ${RESOURCE_GROUP} --name ${CLUSTER} --enable-app-routing-istio
+Argument '--enable-app-routing-istio' is in preview and under development. Reference and support levels: https://aka.ms/CLI_refstatus
+The behavior of this command has been altered by the following extension: aks-preview
+AAD role propagation done[############################################]  100.0000%
+keyvaultid: None, enable_kv: None
+{
+  "aadProfile": null,
+  "addonProfiles": {
+    "KubeDashboard": {
+      "config": null,
+      "enabled": false,
+      "identity": null
+    },
+    "omsagent": {
+      "config": {
+        "logAnalyticsWorkspaceResourceID": "/subscriptions/4336b46c-cadc-4555-8390-7d9568f0bbee/resourceGroups/Temtum_Testnet_1/providers/Microsoft.OperationalInsights/workspaces/goq-dev-leapjnwc-logs"
+      },
+      "enabled": true,
+      "identity": {
+        "clientId": "a935117b-5b3e-4f55-98de-fade9c048f4a",
+        "objectId": "21f5c820-b3e0-49b6-b18c-ad269751451f",
+        "resourceId": "/subscriptions/4336b46c-cadc-4555-8390-7d9568f0bbee/resourcegroups/MC_Temtum_Testnet_1_goq-dev-leapjnwc-cluster_westus2/providers/Microsoft.ManagedIdentity/userAssignedIdentities/omsagent-goq-dev-leapjnwc-cluster"
+      }
+    }
+  },
+  "agentPoolProfiles": [
+    {
+      "artifactStreamingProfile": null,
+      "availabilityZones": null,
+      "capacityReservationGroupId": null,
+      "count": 6,
+      "creationData": null,
+      "currentOrchestratorVersion": "1.34.0",
+      "eTag": "9ff7990d-edc7-469a-a777-0b75c12de344",
+      "enableAutoScaling": false,
+      "enableEncryptionAtHost": null,
+      "enableFips": false,
+      "enableNodePublicIp": false,
+      "enableOsDiskFullCaching": null,
+      "enableUltraSsd": null,
+      "gatewayProfile": null,
+      "gpuInstanceProfile": null,
+      "gpuProfile": null,
+      "hostGroupId": null,
+      "kubeletConfig": null,
+      "kubeletDiskType": "OS",
+      "linuxOsConfig": null,
+      "localDnsProfile": null,
+      "maxCount": null,
+      "maxPods": 100,
+      "messageOfTheDay": null,
+      "minCount": null,
+      "mode": "System",
+      "name": "subnet1pool",
+      "networkProfile": null,
+      "nodeImageVersion": "AKSUbuntu-2204gen2containerd-202604.24.0",
+      "nodeInitializationTaints": null,
+      "nodeLabels": null,
+      "nodePublicIpPrefixId": null,
+      "nodeTaints": null,
+      "orchestratorVersion": "1.34.0",
+      "osDiskSizeGb": 100,
+      "osDiskType": "Managed",
+      "osSku": "Ubuntu",
+      "osType": "Linux",
+      "podIpAllocationMode": null,
+      "podSubnetId": null,
+      "powerState": {
+        "code": "Running"
+      },
+      "preparedImageSpecificationProfile": null,
+      "provisioningState": "Succeeded",
+      "proximityPlacementGroupId": null,
+      "scaleDownMode": "Delete",
+      "scaleSetEvictionPolicy": null,
+      "scaleSetPriority": null,
+      "securityProfile": {
+        "enableSecureBoot": false,
+        "enableVtpm": false,
+        "sshAccess": "LocalUser"
+      },
+      "spotMaxPrice": null,
+      "status": null,
+      "tags": {
+        "function": "quorum"
+      },
+      "type": "VirtualMachineScaleSets",
+      "upgradeSettings": {
+        "drainTimeoutInMinutes": null,
+        "maxBlockedNodes": null,
+        "maxSurge": "10%",
+        "maxUnavailable": "0",
+        "nodeSoakDurationInMinutes": null,
+        "undrainableNodeBehavior": null
+      },
+      "upgradeSettingsBlueGreen": null,
+      "upgradeStrategy": "Rolling",
+      "virtualMachineNodesStatus": null,
+      "virtualMachinesProfile": null,
+      "vmSize": "Standard_D4as_v6",
+      "vnetSubnetId": "/subscriptions/4336b46c-cadc-4555-8390-7d9568f0bbee/resourceGroups/Temtum_Testnet_1/providers/Microsoft.Network/virtualNetworks/goq-dev-leapjnwc-vnet/subnets/goq-dev-leapjnwc-subnet1",
+      "windowsProfile": null,
+      "workloadRuntime": null
+    }
+  ],
+  "aiToolchainOperatorProfile": null,
+  "apiServerAccessProfile": null,
+  "autoScalerProfile": null,
+  "autoUpgradeProfile": {
+    "nodeOsUpgradeChannel": "NodeImage",
+    "upgradeChannel": null
+  },
+  "azureMonitorProfile": {
+    "appMonitoring": null,
+    "containerInsights": {
+      "containerNetworkLogs": null,
+      "disableCustomMetrics": null,
+      "disablePrometheusMetricsScraping": null,
+      "enabled": true,
+      "logAnalyticsWorkspaceResourceId": "/subscriptions/4336b46c-cadc-4555-8390-7d9568f0bbee/resourceGroups/Temtum_Testnet_1/providers/Microsoft.OperationalInsights/workspaces/goq-dev-leapjnwc-logs",
+      "syslogPort": null
+    },
+    "metrics": null
+  },
+  "azurePortalFqdn": "goq-dev-leapjnwc-6j4c94md.portal.hcp.westus2.azmk8s.io",
+  "bootstrapProfile": {
+    "artifactSource": "Direct",
+    "containerRegistryId": null
+  },
+  "controlPlaneScalingProfile": null,
+  "creationData": null,
+  "currentKubernetesVersion": "1.34.0",
+  "disableLocalAccounts": null,
+  "diskEncryptionSetId": null,
+  "dnsPrefix": "goq-dev-leapjnwc",
+  "eTag": "733840a9-9343-4a2b-abad-0731667b6c22",
+  "enableNamespaceResources": null,
+  "enableRbac": true,
+  "extendedLocation": null,
+  "fqdn": "goq-dev-leapjnwc-6j4c94md.hcp.westus2.azmk8s.io",
+  "fqdnSubdomain": null,
+  "healthMonitorProfile": {
+    "enableContinuousControlPlaneAndAddonMonitor": false,
+    "enableOnDemandMonitor": false
+  },
+  "hostedSystemProfile": {
+    "enabled": false,
+    "nodeSubnetId": null,
+    "systemNodeSubnetId": null
+  },
+  "httpProxyConfig": null,
+  "id": "/subscriptions/4336b46c-cadc-4555-8390-7d9568f0bbee/resourcegroups/Temtum_Testnet_1/providers/Microsoft.ContainerService/managedClusters/goq-dev-leapjnwc-cluster",
+  "identity": {
+    "delegatedResources": null,
+    "principalId": null,
+    "tenantId": null,
+    "type": "UserAssigned",
+    "userAssignedIdentities": {
+      "/subscriptions/4336b46c-cadc-4555-8390-7d9568f0bbee/resourceGroups/Temtum_Testnet_1/providers/Microsoft.ManagedIdentity/userAssignedIdentities/goq-dev-leapjnwc-ops-identity": {
+        "clientId": "44a3fd22-fa16-4c28-b2c2-3f834eca31a9",
+        "principalId": "a6d7a626-f158-47c5-84e7-d16e4cb72cfd"
+      }
+    }
+  },
+  "identityProfile": {
+    "kubeletidentity": {
+      "clientId": "e8908d12-1618-4844-b7e9-f70e05ed451a",
+      "objectId": "1a82af47-7032-48a6-932b-ef7262ca3297",
+      "resourceId": "/subscriptions/4336b46c-cadc-4555-8390-7d9568f0bbee/resourcegroups/MC_Temtum_Testnet_1_goq-dev-leapjnwc-cluster_westus2/providers/Microsoft.ManagedIdentity/userAssignedIdentities/goq-dev-leapjnwc-cluster-agentpool"
+    }
+  },
+  "ingressProfile": {
+    "applicationLoadBalancer": null,
+    "gatewayApi": {
+      "installation": "Standard"
+    },
+    "webAppRouting": {
+      "defaultDomain": {
+        "domainName": null,
+        "enabled": false
+      },
+      "dnsZoneResourceIds": null,
+      "enabled": false,
+      "gatewayApiImplementations": {
+        "appRoutingIstio": {
+          "mode": "Enabled"
+        }
+      },
+      "identity": {
+        "clientId": null,
+        "objectId": null,
+        "resourceId": null
+      },
+      "nginx": {
+        "defaultIngressControllerType": "AnnotationControlled"
+      }
+    }
+  },
+  "kind": "Base",
+  "kubernetesVersion": "1.34.0",
+  "linuxProfile": null,
+  "location": "westus2",
+  "maxAgentPools": 100,
+  "metricsProfile": {
+    "costAnalysis": {
+      "enabled": false
+    }
+  },
+  "name": "goq-dev-leapjnwc-cluster",
+  "networkProfile": {
+    "advancedNetworking": null,
+    "dnsServiceIp": "10.2.0.10",
+    "ipFamilies": [
+      "IPv4"
+    ],
+    "kubeProxyConfig": null,
+    "loadBalancerProfile": {
+      "allocatedOutboundPorts": null,
+      "backendPoolType": "nodeIPConfiguration",
+      "clusterServiceLoadBalancerHealthProbeMode": null,
+      "effectiveOutboundIPs": [
+        {
+          "id": "/subscriptions/4336b46c-cadc-4555-8390-7d9568f0bbee/resourceGroups/MC_Temtum_Testnet_1_goq-dev-leapjnwc-cluster_westus2/providers/Microsoft.Network/publicIPAddresses/ebeb49c9-7bdf-44a8-98df-1681ad0e23de",
+          "resourceGroup": "MC_Temtum_Testnet_1_goq-dev-leapjnwc-cluster_westus2"
+        }
+      ],
+      "enableMultipleStandardLoadBalancers": null,
+      "idleTimeoutInMinutes": null,
+      "managedOutboundIPs": {
+        "count": 1,
+        "countIPv6": null
+      },
+      "outboundIPs": null,
+      "outboundIpPrefixes": null
+    },
+    "loadBalancerSku": "standard",
+    "natGatewayProfile": null,
+    "networkDataplane": "azure",
+    "networkMode": null,
+    "networkPlugin": "azure",
+    "networkPluginMode": null,
+    "networkPolicy": "none",
+    "outboundType": "loadBalancer",
+    "podCidr": null,
+    "podCidrs": null,
+    "podLinkLocalAccess": "IMDS",
+    "serviceCidr": "10.2.0.0/24",
+    "serviceCidrs": [
+      "10.2.0.0/24"
+    ],
+    "staticEgressGatewayProfile": null
+  },
+  "nodeProvisioningProfile": {
+    "defaultNodePools": "Auto",
+    "mode": "Manual"
+  },
+  "nodeResourceGroup": "MC_Temtum_Testnet_1_goq-dev-leapjnwc-cluster_westus2",
+  "nodeResourceGroupProfile": null,
+  "oidcIssuerProfile": {
+    "enabled": true,
+    "issuerUrl": "https://westus2.oic.prod-aks.azure.com/dfe536f9-3068-4b4e-b585-78fd9fcbaf73/688e8693-0ec0-43f9-afa8-bd1ce5d43778/"
+  },
+  "podIdentityProfile": null,
+  "powerState": {
+    "code": "Running"
+  },
+  "privateFqdn": null,
+  "privateLinkResources": null,
+  "provisioningState": "Succeeded",
+  "publicNetworkAccess": null,
+  "resourceGroup": "Temtum_Testnet_1",
+  "resourceUid": "69defdbbaee73e0001cbf593",
+  "schedulerProfile": null,
+  "securityProfile": {
+    "azureKeyVaultKms": null,
+    "customCaTrustCertificates": null,
+    "defender": null,
+    "imageCleaner": null,
+    "imageIntegrity": null,
+    "kubernetesResourceObjectEncryptionProfile": null,
+    "nodeRestriction": null,
+    "serviceAccountImagePullProfile": null,
+    "workloadIdentity": {
+      "enabled": true
+    }
+  },
+  "serviceMeshProfile": {
+    "istio": null,
+    "mode": "Disabled"
+  },
+  "servicePrincipalProfile": {
+    "clientId": "msi",
+    "secret": null
+  },
+  "sku": {
+    "name": "Base",
+    "tier": "Free"
+  },
+  "status": null,
+  "storageProfile": {
+    "blobCsiDriver": null,
+    "diskCsiDriver": {
+      "enabled": true,
+      "version": "v1"
+    },
+    "fileCsiDriver": {
+      "enabled": true
+    },
+    "snapshotController": {
+      "enabled": true
+    }
+  },
+  "supportPlan": "KubernetesOfficial",
+  "systemData": null,
+  "tags": null,
+  "type": "Microsoft.ContainerService/ManagedClusters",
+  "upgradeSettings": null,
+  "windowsProfile": {
+    "adminPassword": null,
+    "adminUsername": "azureuser",
+    "enableCsiProxy": true,
+    "gmsaProfile": null,
+    "licenseType": null
+  },
+  "workloadAutoScalerProfile": {
+    "keda": null,
+    "verticalPodAutoscaler": null
+  }
+}

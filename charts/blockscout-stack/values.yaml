@@ -129,22 +129,11 @@ blockscout:
   ## Blockscout ENV vars
   ## ref: https://docs.blockscout.com/setup/env-variables
   ##
-  env: {}
-    # NAME: VALUE
-  # Refer to an existing Secret/ConfigMap
-  extraEnv:
-    - name: DATABASE_URL
-      valueFrom:
-        secretKeyRef:
-          name: blockscout-secret
-          key: postgres://dbadmin:AooDDKC54pmEePhM3RpNdYSKFubbTVb@temtumttn1db.postgres.database.azure.com/postgres
-    - name: ETHEREUM_JSONRPC_VARIANT
-      valueFrom: besu
-    - name: ETHEREUM_JSONRPC_HTTP_URL
-      valueFrom: 10.0.1.188:8545
-    - name: SECRET_KEY_BASE
-      valueFrom: 
-
+  env:
+    DATABASE_URL: postgres://dbadmin:AooDDKC54pmEePhM3RpNdYSKFubbTVb@temtumttn1db.postgres.database.azure.com/postgres
+    ETHEREUM_JSONRPC_VARIANT: besu
+    ETHEREUM_JSONRPC_HTTP_URL: 10.0.1.188:8545
+    SECRET_KEY_BASE: 
   ## Set ENV vars via secret, this can be useful for DB connection params, api keys, etc.
   ##
   # This will create a Secret with the specified data
