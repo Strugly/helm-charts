@@ -1,202 +1,122 @@
-# Default values for blockscout-stack.
-# This is a YAML-formatted file.
-# Declare variables to be passed into your templates.
+# blockscout-stack values.yaml — Temtum Testnet
+# Domain:      explorer.testnet.rhaegal.io  (frontend)
+#              explorer-api.testnet.rhaegal.io  (backend)
+# Chart:       blockscout/blockscout-stack
+# Docs:        https://docs.blockscout.com/setup/deployment/kubernetes-deployment
+#
+# BEFORE DEPLOYING — fill in every value marked: # <-- REQUIRED
+# Secrets (DATABASE_URL, SECRET_KEY_BASE) should ideally live in a K8s Secret
+# and be referenced via blockscout.extraEnv / blockscout.envFrom rather than
+# hardcoded here. See commented extraEnv examples below.
 
-## Provide a name in place of blockscout-stack for `app:` labels
-##
-nameOverride: ""
-## Provide a name to substitute for the full names of resources
-##
+# ─── Global ──────────────────────────────────────────────────────────────────
+nameOverride: "blockscout-temtum"
 fullnameOverride: ""
-## Common labels to add to all resources
-##
-commonLabels: {}
-## Reference to one or more secrets to be used when pulling images
-## ref: https://kubernetes.io/docs/tasks/configure-pod-container/pull-image-private-registry/
-##
-imagePullSecrets: []
-## Blockscout configuration options
-##
+
 config:
   network:
     id: 20251
-    name: Temtum Mainnet
-    shortname: TEM
+    name: TemTum Testnet
+    shortname: TemTum
     currency:
-      name: Temcoin
+      name: TemTum
       symbol: TEM
       decimals: 18
-      # if network uses dual token model like gnosis (in most case it should be set to false)
       dualToken: false
+  testnet: true
   account:
-    enabled: false
-  testnet: false
+    enabled: false           # set true + add Redis if you want user accounts
   nameService:
     enabled: false
-    url: "postgres://dbadmin:AooDDKC54pmEePhM3RpNdYSKFubbTVb@temtumttn1db.postgres.database.azure.com/postgres"
-  ## Creates redirect from additional domain to frontend domain
-  ## Works only if backend and frontend runs on single domain
-  redirect:
-    enabled: false
-    hostnames: ["extra-chart-example.local"]
-    ingress:
-      className: nginx
-      annotations:
-        nginx.ingress.kubernetes.io/server-snippet: |
-          if ($request_uri !~ ^/.well-known/(.*)$) {
-            return 301 $scheme://{{ .Values.frontend.ingress.hostname }}$request_uri;
-          }
-      tls:
-        enabled: true
-  ## If set to true will create service monitors for blockscout and stats
-  ##
   prometheus:
-    enabled: false
-  ## Whitelist metrics path on ingress to make metrics non-public
+    enabled: false           # set true if you have Prometheus Operator installed
     ingressWhitelist:
-      enabled: true
-      annotations:
-        nginx.ingress.kubernetes.io/whitelist-source-range: "10.0.0.0/8,172.16.0.0/12,192.168.0.0/16"
-    blackbox:
-      enabled: true
-      path: /api/health
-      scrapeTimeout: 5s
-      interval: 15s
-      module: http_2xx
-      extraLabels: {}
-      selector:
-        matchLabels:
-          app.kubernetes.io/name: prometheus-blackbox-exporter
-          app.kubernetes.io/instance: prometheus-blackbox-exporter
-    rules:
-      enabled: true
-      ## If latest block timestamp is older than healthyBlockPeriod instance is considered unhealthy and alert is created
-      healthyBlockPeriod: 300
-      ## Alert is created if there is no new batches for more than batchTimeMultiplier x average_batch_time
-      batchTimeMultiplier: 2
-      labels: {}
-## Configuration options for backend
-##
+      enabled: false
+
+# ─── Backend ─────────────────────────────────────────────────────────────────
 blockscout:
   enabled: true
-  ## Replica count for indexer (if separate api is not used this replica count for deployment containing both indexer and api). Currently only one replica is supported
-  ##
   replicaCount: 1
-  ## Image parametes
-  ##
+
   image:
     repository: ghcr.io/blockscout/blockscout
     pullPolicy: IfNotPresent
-    tag: "latest"
-  ## Init container configuration (used to run DB migrations)
-  ##
+    tag: "latest"            # pin to a specific release tag for production
+
   init:
     enabled: true
-    command:
-      - /bin/sh
+    command: ["/bin/sh"]
     args:
       - -c
       - bin/blockscout eval "Elixir.Explorer.ReleaseTasks.create_and_migrate()"
-  ## Run API service as separate deployment
-  ##
-  releaseCookie: secret
-  separateApi:
-    enabled: false
-    replicaCount: 2
-    resources:
-      limits:
-        cpu: 1
-        memory: 2Gi
-      requests:
-        cpu: 500m
-        memory: 1Gi
-  nftStorage:
-    enabled: false
-    bucketHost: xxx.r2.cloudflarestorage.com
-    accessKey: ""
-    secretKey: ""
-    bucketName: nft
-    bucketUrl: https://pub-xxx.r2.dev
-    ipfsGateway: https://ipfs.io/ipfs
-    workerConcurrency: 10
-    resources:
-      limits:
-        cpu: 2
-        memory: 4Gi
-      requests:
-        cpu: 1
-        memory: 2Gi
-  ## Blockscout ENV vars
-  ## ref: https://docs.blockscout.com/setup/env-variables
-  ##
+
+  # ── Backend ENV vars ───────────────────────────────────────────────────────
+  # Required vars. Sensitive ones (DATABASE_URL, SECRET_KEY_BASE) are shown
+  # here for clarity — move them to a K8s Secret + use extraEnv/envFrom in prod.
   env:
-    DATABASE_URL: postgres://dbadmin:AooDDKC54pmEePhM3RpNdYSKFubbTVb@temtumttn1db.postgres.database.azure.com/postgres
-    ETHEREUM_JSONRPC_VARIANT: besu
-    ETHEREUM_JSONRPC_HTTP_URL: 10.0.1.188:8545
-    SECRET_KEY_BASE: 
-  ## Set ENV vars via secret, this can be useful for DB connection params, api keys, etc.
-  ##
-  # This will create a Secret with the specified data
-  envFromSecret: {}
-    # NAME: VALUE
-  # Refer to an existing Secret/ConfigMap
-  envFrom: []
-    # - secretRef:
-    #     name: blockscout-secret
-    # - configMapRef:
-    #     name: blockscout-config
-  ## Command to start blockscout instance
-  ##
-  command:
-    - /bin/sh
-  args:
-    - -c
-    - bin/blockscout start
-  ## Annotations to add to blockscout pod
-  podAnnotations: {}
+    # ── Required ──────────────────────────────────────────────────────────
+    ETHEREUM_JSONRPC_VARIANT: "besu"
+    ETHEREUM_JSONRPC_HTTP_URL: "http://10.0.1.188:8545"
+    ETHEREUM_JSONRPC_TRACE_URL: "http://10.0.1.188:8545"  # besu uses the same endpoint for trace
+    ETHEREUM_JSONRPC_WS_URL: "ws://10.0.1.188:8546"       # <-- confirm WS port with your besu config
 
-  ## Annotations to add to blockscout deployment
-  annotations: {}
+    # ── Chain identity ────────────────────────────────────────────────────
+    COIN: "TEM"
+    COIN_NAME: "TemTum"
+    CHAIN_ID: "20251"
+    NETWORK: "TemTum"
+    SUBNETWORK: "Testnet"
 
-  podSecurityContext: {}
-  ## SecurityContext holds pod-level security attributes and common container settings.
-  ## ref: https://kubernetes.io/docs/tasks/configure-pod-container/security-context/
-  ##
-  securityContext: {}
-  terminationGracePeriodSeconds: 300
-  ## Liveness probe
-  ##
-  livenessProbe:
-    enabled: true
-    path: /api/health/liveness
-    params:
-      initialDelaySeconds: 100
-      periodSeconds: 100
-      timeoutSeconds: 30
-  ## Readiness probe
-  ##
-  readinessProbe:
-    enabled: true
-    path: /api/health/readiness
-    params:
-      initialDelaySeconds: 60
-      periodSeconds: 10
-      timeoutSeconds: 60
+    # ── Backend host (used in API example URLs) ───────────────────────────
+    BLOCKSCOUT_HOST: "explorer-api.testnet.rhaegal.io"
+    BLOCKSCOUT_PROTOCOL: "https"
 
-  service:
-    type: ClusterIP
-    port: 80
-  ## Configure ingress resource that allow you to access the blockscout installation.
-  ## ref: http://kubernetes.io/docs/user-guide/ingress/
-  ##
+    # ── Frontend URL (for CORS and redirect) ─────────────────────────────
+    WEBAPP_URL: "https://explorer.testnet.rhaegal.io"
+
+    # ── Logging ──────────────────────────────────────────────────────────
+    DISABLE_FILE_LOGGING: "true"   # stdout only in k8s
+    LOG_LEVEL: "warn"
+
+    # ── Indexer ───────────────────────────────────────────────────────────
+    APPLICATION_MODE: "all"        # runs both indexer + API; split with separateApi if needed
+    INDEXER_DISABLE_PENDING_TRANSACTIONS_FETCHER: "false"
+    FETCH_REWARDS_WAY: "trace_block"  # besu supports trace_block
+
+    # ── API ───────────────────────────────────────────────────────────────
+    API_V2_ENABLED: "true"
+    DISABLE_INDEXER: "false"
+
+  # ── Secrets — better via K8s Secret, but shown inline for starter clarity ─
+  # Option A: inline (NOT for production — visible in git/CI)
+  envFromSecret:
+    DATABASE_URL: "postgres://dbadmin:<PASSWORD>@temtumttn1db.postgres.database.azure.com/postgres"
+    SECRET_KEY_BASE: ""   # <-- REQUIRED: generate with `mix phx.gen.secret` or `openssl rand -base64 64`
+
+  # Option B (recommended for production): reference an existing K8s Secret
+  # Create with:
+  #   kubectl create secret generic blockscout-backend-secret \
+  #     --from-literal=DATABASE_URL='postgres://dbadmin:<PASSWORD>@...' \
+  #     --from-literal=SECRET_KEY_BASE='<generated>'
+  # Then comment out envFromSecret above and uncomment:
+  # envFrom:
+  #   - secretRef:
+  #       name: blockscout-backend-secret
+
+  # ── Ingress ───────────────────────────────────────────────────────────────
   ingress:
-    enabled: false
-    className: ""
-    annotations: {}
-    hostname: chart-example.local
+    enabled: true
+    className: "nginx"       # adjust to your ingress class (e.g. "traefik", "alb")
+    annotations:
+      nginx.ingress.kubernetes.io/proxy-body-size: "0"
+      nginx.ingress.kubernetes.io/proxy-read-timeout: "300"
+      nginx.ingress.kubernetes.io/proxy-send-timeout: "300"
+      # Uncomment if using cert-manager:
+      # cert-manager.io/cluster-issuer: "letsencrypt-prod"
+    hostname: "explorer-api.testnet.rhaegal.io"
     tls:
-      enabled: false
-      #secretName:
+      enabled: true
+      secretName: "blockscout-backend-tls"
     paths:
       - path: /api
         pathType: Prefix
@@ -211,102 +131,116 @@ blockscout:
       - path: /auth/logout
         pathType: Exact
 
+  service:
+    type: ClusterIP
+    port: 80
+
   resources:
     limits:
       cpu: 2
       memory: 4Gi
     requests:
-      cpu: 1
-      memory: 2Gi
-  # Additional volumes on the output Blockscout Deployment definition.
-  volumes: []
-  # - name: foo
-  #   secret:
-  #     secretName: mysecret
-  #     optional: false
+      cpu: 500m
+      memory: 1Gi
 
-  # Additional volumeMounts on the output Blockscout Deployment definition.
-  volumeMounts: []
-  # - name: foo
-  #   mountPath: "/etc/foo"
-  #   readOnly: true
-## Configuration options for frontend
-##
+  livenessProbe:
+    enabled: true
+    path: /api/health/liveness
+    params:
+      initialDelaySeconds: 120
+      periodSeconds: 60
+      timeoutSeconds: 30
+
+  readinessProbe:
+    enabled: true
+    path: /api/health/readiness
+    params:
+      initialDelaySeconds: 60
+      periodSeconds: 10
+      timeoutSeconds: 30
+
+  terminationGracePeriodSeconds: 300
+
+# ─── Frontend ─────────────────────────────────────────────────────────────────
 frontend:
   enabled: true
-  ## Image parametes
+  replicaCount: 2
+
   image:
     repository: ghcr.io/blockscout/frontend
-    tag: latest
     pullPolicy: IfNotPresent
+    tag: "latest"            # pin to a specific release tag for production
 
-  replicaCount: 2
-  ## Annotations to add to frontend pod
-  podAnnotations: {}
+  # ── Frontend ENV vars ──────────────────────────────────────────────────────
+  # IMPORTANT: these live at the `frontend:` root, NOT nested under `blockscout:`
+  # All NEXT_PUBLIC_* vars are exposed to the browser — no secrets here.
+  env:
+    # ── App ───────────────────────────────────────────────────────────────
+    NEXT_PUBLIC_APP_PROTOCOL: "https"
+    NEXT_PUBLIC_APP_HOST: "explorer.testnet.rhaegal.io"
+    NEXT_PUBLIC_APP_ENV: "production"
 
-  ## Annotations to add to frontend deployment
-  annotations: {}
+    # ── API connection (frontend → backend) ───────────────────────────────
+    NEXT_PUBLIC_API_HOST: "explorer-api.testnet.rhaegal.io"
+    NEXT_PUBLIC_API_PROTOCOL: "https"
+    NEXT_PUBLIC_API_BASE_PATH: "/"
+    NEXT_PUBLIC_API_WEBSOCKET_PROTOCOL: "wss"
 
-  podSecurityContext: {}
-  ## SecurityContext holds pod-level security attributes and common container settings.
-  ## ref: https://kubernetes.io/docs/tasks/configure-pod-container/security-context/
-  ##
-  securityContext: {}
+    # ── Chain / network identity ──────────────────────────────────────────
+    NEXT_PUBLIC_NETWORK_NAME: "TemTum Testnet"
+    NEXT_PUBLIC_NETWORK_SHORT_NAME: "TemTum"
+    NEXT_PUBLIC_NETWORK_ID: "20251"
+    NEXT_PUBLIC_NETWORK_CURRENCY_NAME: "TemTum"
+    NEXT_PUBLIC_NETWORK_CURRENCY_SYMBOL: "TEM"
+    NEXT_PUBLIC_NETWORK_CURRENCY_DECIMALS: "18"
+    NEXT_PUBLIC_IS_TESTNET: "true"
+
+    # ── RPC URL for wallet "Add Network" button ───────────────────────────
+    # Use a public-facing RPC here (not your internal 10.0.1.188)
+    NEXT_PUBLIC_NETWORK_RPC_URL: ""  # <-- REQUIRED: e.g. https://rpc.testnet.rhaegal.io
+
+    # ── Verification type ─────────────────────────────────────────────────
+    NEXT_PUBLIC_NETWORK_VERIFICATION_TYPE: "validation"  # or "mining" depending on besu config
+
+    # ── UI tweaks ─────────────────────────────────────────────────────────
+    NEXT_PUBLIC_HOMEPAGE_CHARTS: "['daily_txs']"
+    NEXT_PUBLIC_HOMEPAGE_STATS: "['total_blocks','average_block_time','total_txs','wallet_addresses']"
+
+  # ── Ingress ───────────────────────────────────────────────────────────────
+  ingress:
+    enabled: true
+    className: "nginx"
+    annotations:
+      nginx.ingress.kubernetes.io/proxy-body-size: "0"
+      # cert-manager.io/cluster-issuer: "letsencrypt-prod"
+    hostname: "explorer.testnet.rhaegal.io"
+    tls:
+      enabled: true
+      secretName: "blockscout-frontend-tls"
+    paths:
+      - path: /
+        pathType: Prefix
 
   service:
     type: ClusterIP
     port: 80
-  ## Configure ingress resource that allow you to access the frontend installation.
-  ## ref: http://kubernetes.io/docs/user-guide/ingress/
-  ##
-  ingress:
-    enabled: false
-    className: ""
-    annotations: {}
-    hostname: chart-example.local
-    tls:
-      enabled: false
-      #secretName:
-    paths:
-      - path: /
-
-    ## Basic authentication for frontend ingress (nginx ingress controller)
-    ## ref: https://kubernetes.github.io/ingress-nginx/examples/auth/basic/
-    ##
-    basicAuth:
-      enabled: false
-      ## Use an existing Secret containing key "auth" with htpasswd-formatted credentials.
-      ## Recommended for production / GitOps workflows.
-      existingSecret: ""
-      ## Override the generated Secret name (only used when existingSecret is empty).
-      ## Default: "<release>-frontend-basic-auth"
-      secretName: ""
-      ## Credentials for chart-generated Secret (only when existingSecret is empty).
-      ## WARNING: storing passwords in values.yaml exposes them to Git history and CI logs.
-      ## Use existingSecret or external secret management for production.
-      username: ""
-      password: ""
-    ## Authentication realm shown in the browser prompt
-      realm: "Authentication Required"
 
   resources:
     limits:
-      memory: "1Gi"
       cpu: "500m"
+      memory: "1Gi"
     requests:
-      memory: "256Mi"
       cpu: "250m"
-  ## Liveness probe
-  ##
+      memory: "256Mi"
+
   livenessProbe:
     enabled: true
     path: /api/healthz
     params:
       initialDelaySeconds: 100
-      periodSeconds: 100
+      periodSeconds: 60
       timeoutSeconds: 30
-  ## Readiness probe
-  ##
+
   readinessProbe:
     enabled: true
     path: /api/healthz
@@ -314,213 +248,30 @@ frontend:
       initialDelaySeconds: 30
       periodSeconds: 10
       timeoutSeconds: 30
-  ## Frontend ENV vars
-  ## ref: https://github.com/blockscout/frontend/blob/main/docs/ENVS.md
-  ##
-  env: {}
-    # NAME: VALUE
-  # Refer to an existing Secret/ConfigMap
-  extraEnv: []
-    # - name: FAVICON_GENERATOR_API_KEY
-    #   valueFrom:
-    #     secretKeyRef:
-    #       name: blockscout-frontend-secret
-    #       key: FAVICON_GENERATOR_API_KEY
-  # This will create a Secret with the specified data
-  envFromSecret: {}
-    # NAME: VALUE
-  # Refer to an existing Secret/ConfigMap
-  envFrom: []
-    # - secretRef:
-    #     name: blockscout-frontend-secret
-    # - configMapRef:
-    #     name: blockscout-frontend-config
 
+# ─── Stats service (optional — disable for initial deploy) ───────────────────
 stats:
   enabled: false
-  ## Image parametes
-  ##
-  image:
-    repository: ghcr.io/blockscout/stats
-    tag: v2.4.0
-    pullPolicy: IfNotPresent
+  # Enable later with:
+  #   env:
+  #     STATS__DB_URL: "postgres://dbadmin:<PASSWORD>@temtumttn1db.postgres.database.azure.com/blockscout_stats"
+  #     STATS__BLOCKSCOUT_DB_URL: "postgres://dbadmin:<PASSWORD>@temtumttn1db.postgres.database.azure.com/postgres"
+  #     STATS__SERVER__HTTP__CORS__ENABLED: "true"
+  #     STATS__SERVER__HTTP__CORS__ALLOWED_ORIGIN: "https://explorer.testnet.rhaegal.io"
+  # ingress:
+  #   enabled: true
+  #   hostname: "explorer-stats.testnet.rhaegal.io"
 
-  replicaCount: 1
-  service:
-    type: ClusterIP
-    port: 80
-    metricsPort: 6060
-
-  podAnnotations: {}
-
-  ## Annotations to add to stats deployment
-  annotations: {}
-
-  podSecurityContext: {}
-
-  securityContext: {}
-
-  basePath: "/"
-
-  ## Configure ingress resource that allow you to access the stats installation.
-  ## ref: http://kubernetes.io/docs/user-guide/ingress/
-  ##
-  ingress:
-    enabled: false
-    className: ""
-    annotations: {}
-    hostname: chart-example-stats.local
-    tls:
-      enabled: false
-      #secretName:
-    paths:
-      - path: /
-        pathType: Prefix
-
-  resources:
-    limits:
-      memory: "512Mi"
-      cpu: 250m
-    requests:
-      memory: 512Mi
-      cpu: 250m
-  ## Files to mount to stats pod
-  ##
-  files:
-    enabled: false
-    list: {}
-      # file.txt: |
-      #   test
-    mountPath: /tmp/path
-
-  ## Liveness probe
-  ##
-  livenessProbe:
-    enabled: true
-    path: /health
-    params:
-      initialDelaySeconds: 100
-      periodSeconds: 100
-      timeoutSeconds: 30
-  ## Readiness probe
-  ##
-  readinessProbe:
-    enabled: true
-    path: /health
-    params:
-      initialDelaySeconds: 60
-      periodSeconds: 10
-      timeoutSeconds: 60
-  ## Stats ENV vars
-  ## ref: https://github.com/blockscout/blockscout-rs/tree/main/stats#env
-  env: {}
-    # NAME: VALUE
-  envFromSecret: {}
-    # NAME: VALUE
-  extraEnv: []
-    # - name: STATS__DB_URL
-    #   valueFrom:
-    #     secretKeyRef:
-    #       name: blockscout-stats-secret
-    #       key: STATS__DB_URL
-
+# ─── Disabled optional components ────────────────────────────────────────────
 userOpsIndexer:
   enabled: false
-    ## Image parametes
-  ##
-  image:
-    repository: ghcr.io/blockscout/user-ops-indexer
-    tag: latest
-    pullPolicy: IfNotPresent
 
-  replicaCount: 1
-  service:
-    type: ClusterIP
-    port: 80
-    grpc:
-      enabled: true
-      port: 8051
-    metricsPort: 6060
-
-  podAnnotations: {}
-
-  ## Annotations to add to user-ops-indexer deployment
-  annotations: {}
-
-  podSecurityContext: {}
-
-  securityContext: {}
-
-  ## Configure ingress resource that allow you to access the stats installation.
-  ## ref: http://kubernetes.io/docs/user-guide/ingress/
-  ##
-  ingress:
-    enabled: false
-    className: ""
-    annotations: {}
-    hostname: chart-example-stats.local
-    tls:
-      enabled: false
-      #secretName:
-    paths:
-      - path: /
-        pathType: Prefix
-
-  resources:
-    limits:
-      memory: "512Mi"
-      cpu: 250m
-    requests:
-      memory: 512Mi
-      cpu: 250m
-
-  ## Liveness probe
-  ##
-  livenessProbe:
-    enabled: false
-    path: /health
-    params:
-      initialDelaySeconds: 100
-      periodSeconds: 100
-      timeoutSeconds: 30
-  ## Readiness probe
-  ##
-  readinessProbe:
-    enabled: false
-    path: /health
-    params:
-      initialDelaySeconds: 60
-      periodSeconds: 10
-      timeoutSeconds: 60
-  ## Stats ENV vars
-  ## ref: https://github.com/blockscout/blockscout-rs/tree/main/stats#env
-  env: {}
-    # NAME: VALUE
-  envFromSecret: {}
-    # NAME: VALUE
-  extraEnv: []
-    # - name: USER_OPS_INDEXER__DATABASE__CONNECT__URL
-    #   valueFrom:
-    #     secretKeyRef:
-    #       name: blockscout-userops-indexer-secret
-    #       key: USER_OPS_INDEXER__DATABASE__CONNECT__URL
-
+# ─── Service account ─────────────────────────────────────────────────────────
 serviceAccount:
-  # Specifies whether a service account should be created
   create: true
-  # Annotations to add to the service account
   annotations: {}
-  # The name of the service account to use.
-  # If not set and create is true, a name is generated using the fullname template
   name: ""
-## Node labels for blockscout-stack pod assignment
-## Ref: https://kubernetes.io/docs/user-guide/node-selection/
-##
+
 nodeSelector: {}
-
 tolerations: []
-
-## Affinity for pod assignment
-## Ref: https://kubernetes.io/docs/concepts/configuration/assign-pod-node/#affinity-and-anti-affinity
-##
 affinity: {}
